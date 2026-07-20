@@ -5,5 +5,5 @@ Symfony bundle to handle application domain logic: configuration registry, featu
 ## Installation
 
 ```bash
-composer require codraw/
+composer require codraw/application
 ```
