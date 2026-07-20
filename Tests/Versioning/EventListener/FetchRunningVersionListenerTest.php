@@ -22,7 +22,7 @@ class FetchRunningVersionListenerTest extends TestCase
     protected function setUp(): void
     {
         $this->service = new FetchRunningVersionListener(
-            $this->projectDirectory = realpath(__DIR__.'/../../../../..')
+            $this->projectDirectory = realpath(__DIR__.'/../../..')
         );
 
         $this->tearDown();
@@ -63,6 +63,10 @@ class FetchRunningVersionListenerTest extends TestCase
 
     public function testFetchFromFilesystemPublicVersion(): void
     {
+        if (!is_dir($this->projectDirectory.'/public')) {
+            mkdir($this->projectDirectory.'/public');
+        }
+
         file_put_contents($this->projectDirectory.'/public/version.txt', $version = uniqid('version-'));
 
         $this->service->fetchFromFilesystemPublicVersion($event = new FetchRunningVersionEvent());
