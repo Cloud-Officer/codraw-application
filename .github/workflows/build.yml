@@ -1,4 +1,4 @@
-# github-build --organization ugroupmedia --ignored_linters eslint,pmd,bandit,flake8 --excluded_folders './app/api/tests/App/Component/Scenario/Blender/fixtures',var
+# github-build --organization cloud-officer
 ---
 name: Build
 'on':
@@ -19,68 +19,16 @@ permissions:
   contents: read
   pull-requests: read
 env:
-  AMAZON_ADM_CLIENT_SECRET: "${{ secrets.AMAZON_ADM_CLIENT_SECRET }}"
-  API_SECRET: "${{ secrets.API_SECRET }}"
   APP_ENV: test
-  APP_SECRET: "${{ secrets.APP_SECRET }}"
-  APP_STORE_SERVER_API_PRIVATE_KEY: "${{ secrets.APP_STORE_SERVER_API_PRIVATE_KEY }}"
-  APP_STORE_SHARED_SECRET: "${{ secrets.APP_STORE_SHARED_SECRET }}"
-  APT-PACKAGES: blender ffmpeg geoip-database inkscape libcurl4-openssl-dev libgeoip1 libsox-fmt-mp3 sox wkhtmltopdf
-  BRITEVERIFY_APIKEY: "${{ secrets.BRITEVERIFY_APIKEY }}"
-  CACHE_CLUSTER_WRITE_RECORD_SET: localhost
-  CLOUDFRONT_PRIVATE_KEY: "${{ secrets.CLOUDFRONT_PRIVATE_KEY }}"
   COMPOSER_EXIT_ON_PATCH_FAILURE: 1
   COMPOSER_MEMORY_LIMIT: -1
   COMPOSER_TOKEN: "${{ secrets.COMPOSER_AUTH }}"
-  DATABASE_URL: mysql://root@127.0.0.1:3306/pnp%test_token%
-  DATABASE_URL_SLAVE: mysql://root@127.0.0.1:3306/pnp%test_token%
-  DB_HOST: 127.0.0.1
-  DB_PORT: 3306
-  FIXER_API_KEY: "${{ secrets.FIXER_API_KEY }}"
-  GEOLITE2_DB_DIR: "/usr/share/GeoIP"
-  GOOGLEPLAY_CLIENT_SECRET: "${{ secrets.GOOGLEPLAY_CLIENT_SECRET }}"
-  GOOGLEPLAY_REFRESH_TOKEN: "${{ secrets.GOOGLEPLAY_REFRESH_TOKEN }}"
-  GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
-  GOOGLE_API_SECRET: "${{ secrets.GOOGLE_API_SECRET }}"
-  HMS_APP_SECRET: "${{ secrets.HMS_APP_SECRET }}"
-  HMS_PUBLIC_KEY: "${{ secrets.HMS_PUBLIC_KEY }}"
   HOMEBREW_NO_INSTALL_CLEANUP: 'true'
-  JIRA_API_TOKEN: "${{ secrets.JIRA_API_TOKEN }}"
-  LOCO_DSN: "${{ secrets.LOCO_DSN }}"
-  MAX_MIND_LICENSE_KEY: "${{ secrets.MAX_MIND_LICENSE_KEY }}"
-  MESSENGER_TRANSPORT_DSN: amqp://127.0.0.1:5672/%%2f
-  MICROSOFT_API_KEY: "${{ secrets.MICROSOFT_API_KEY }}"
-  MQ_DSN: amqp+rabbitmq://pnp_rabbit:pnp_rabbit@127.0.0.1:5672
-  MQ_PASSWORD: pnp_rabbit
-  MQ_URI: amqp://127.0.0.1:5672
-  MQ_USERNAME: pnp_rabbit
-  MYSQL-VERSION: 8.4
-  NEWRELIC_API_KEY: "${{ secrets.NEWRELIC_API_KEY }}"
-  ONESIGNAL_REST_API_KEY: "${{ secrets.ONESIGNAL_REST_API_KEY }}"
-  ONGAGE_PASSWORD: "${{ secrets.ONGAGE_PASSWORD }}"
-  OPEN_AI_API_KEY: "${{ secrets.OPEN_AI_API_KEY }}"
-  PAYPAL_CLIENT_ID: "${{ secrets.PAYPAL_CLIENT_ID }}"
-  PAYPAL_CLIENT_SECRET: "${{ secrets.PAYPAL_CLIENT_SECRET }}"
-  PAYPAL_TEST_BUYER_PASSWORD: "${{ secrets.PAYPAL_TEST_BUYER_PASSWORD }}"
   PHP-COVERAGE: pcov
-  PHP-EXTENSIONS: composer, openswoole-26.2.0, imap, redis-6.2.0, amqp, protobuf-4.31.0
   PHP-INI-VALUES: memory_limit=4G
   PHP-TOOLS: composer
+  PHP-VERSION: 8.5.8
   PHPCS-VERSION: v3.94.2
-  PUSHER_SECRET: "${{ secrets.PUSHER_SECRET }}"
-  RABBITMQ-PORTS: 5672:5672 15672:15672 5671:5671
-  RABBITMQ-VERSION: 3.10.8
-  REDIS-DISTRIBUTION: valkey
-  REDIS-VERSION: latest
-  REDIS_HOST: localhost
-  REDIS_PORT: 6379
-  SENDGRID_APIKEY: "${{ secrets.SENDGRID_APIKEY }}"
-  STRIPE_SECRET_KEY: "${{ secrets.STRIPE_SECRET_KEY }}"
-  STRIPE_WEBHOOK_SECRET: "${{ secrets.STRIPE_WEBHOOK_SECRET }}"
-  TWILIO_PASSWORD: "${{ secrets.TWILIO_PASSWORD }}"
-  TWILIO_USERNAME: "${{ secrets.TWILIO_USERNAME }}"
-  UGM_ENV: test
-  ZENDESK_SECRET_KEY: "${{ secrets.ZENDESK_SECRET_KEY }}"
 concurrency:
   group: build-${{github.ref}}
   cancel-in-progress: true
@@ -127,21 +75,6 @@ jobs:
         linters: "${{needs.variables.outputs.LINTERS}}"
         ssh-key: "${{secrets.SSH_KEY}}"
         github-token: "${{secrets.GH_PAT}}"
-  hadolint:
-    name: Docker Linter
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    if: "${{needs.variables.outputs.SKIP_LINTERS != '1' && github.event_name == 'pull_request'}}"
-    timeout-minutes: 30
-    steps:
-    - name: Hadolint
-      id: hadolint
-      uses: cloud-officer/ci-actions/linters/hadolint@v2
-      with:
-        linters: "${{needs.variables.outputs.LINTERS}}"
-        ssh-key: "${{secrets.SSH_KEY}}"
-        github-token: "${{secrets.GH_PAT}}"
   markdownlint:
     name: Markdown Linter
     runs-on: ubuntu-latest
@@ -176,7 +109,7 @@ jobs:
         php-version: "${{env.PHP-VERSION}}"
   phpstan:
     name: PHP Stan Linter
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     needs:
     - variables
     if: "${{needs.variables.outputs.SKIP_LINTERS != '1'}}"
@@ -194,7 +127,6 @@ jobs:
         php-version: "${{env.PHP-VERSION}}"
         php-extensions: "${{env.PHP-EXTENSIONS}}"
         composer-command: composer install --optimize-autoloader --no-interaction --prefer-dist --no-scripts
-        php-stan-command: bin/generate-jwt-keys.sh ; gzip -d .tests/*.gz ; sudo mkdir -p /usr/share/GeoIP && sudo cp .tests/*.mmdb /usr/share/GeoIP/ ; (bin/grpc cache:warmup --no-optional-warmers & bin/api cache:warmup --no-optional-warmers) ; vendor/bin/phpstan analyse && vendor/bin/phpstan analyse -c phpstan-grpc.neon
   semgrep:
     name: Semgrep Security Scanner
     permissions:
@@ -209,21 +141,6 @@ jobs:
     steps:
     - name: Semgrep
       uses: cloud-officer/ci-actions/linters/semgrep@v2
-      with:
-        linters: "${{needs.variables.outputs.LINTERS}}"
-        ssh-key: "${{secrets.SSH_KEY}}"
-        github-token: "${{secrets.GH_PAT}}"
-  shellcheck:
-    name: Shell Scripts Linter
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    if: "${{needs.variables.outputs.SKIP_LINTERS != '1' && github.event_name == 'pull_request'}}"
-    timeout-minutes: 30
-    steps:
-    - name: ShellCheck
-      id: shellcheck
-      uses: cloud-officer/ci-actions/linters/shellcheck@v2
       with:
         linters: "${{needs.variables.outputs.LINTERS}}"
         ssh-key: "${{secrets.SSH_KEY}}"
@@ -274,17 +191,11 @@ jobs:
         parameters: "--no_prompt --ignored_folders pnp-scripts"
   php_unit_tests:
     name: PHP Unit Tests
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     needs:
     - variables
     if: "${{needs.variables.outputs.SKIP_TESTS != '1'}}"
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        application:
-        - api
-        - grpc
     steps:
     - name: Setup
       id: setup
@@ -295,17 +206,8 @@ jobs:
         php-ini-values: "${{env.PHP-INI-VALUES}}"
         php-coverage: "${{env.PHP-COVERAGE}}"
         php-tools: "${{env.PHP-TOOLS}}"
-        mysql-version: "${{env.MYSQL-VERSION}}"
-        redis-distribution: "${{env.REDIS-DISTRIBUTION}}"
-        redis-port: "${{env.REDIS_PORT}}"
-        redis-version: "${{env.REDIS-VERSION}}"
-        rabbitmq-version: "${{env.RABBITMQ-VERSION}}"
-        rabbitmq-ports: "${{env.RABBITMQ-PORTS}}"
         apt-packages: "${{env.APT-PACKAGES}}"
         ssh-key: "${{secrets.SSH_KEY}}"
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
         github-token: "${{secrets.GH_PAT}}"
     - name: Composer
       shell: bash
@@ -316,232 +218,7 @@ jobs:
       shell: bash
       if: "${{needs.variables.outputs.SKIP_TESTS != '1'}}"
       run: |
-        bin/generate-jwt-keys.sh
-        export APP_NAME=${{matrix.application}}
-        gzip -d .tests/*.gz
-        sudo cp .tests/*.mmdb /usr/share/GeoIP/
-        mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -P "${DB_PORT}" -h "${DB_HOST}" mysql
-        mysql -u root -P "${DB_PORT}" -h "${DB_HOST}" -e "SET GLOBAL sql_mode='IGNORE_SPACE,STRICT_TRANS_TABLES';"
-        mysql -u root -P "${DB_PORT}" -h "${DB_HOST}" -e "set global table_definition_cache = 4096;"
-        mysql -u root -P "${DB_PORT}" -h "${DB_HOST}" -e "set global table_open_cache = 4096;"
-
-        mkdir -p ./config/ssl/googleplay
-        echo "${{ secrets.GOOGLE_PLAY_AUTH_BASE_64 }}" | base64 --decode > ./config/ssl/googleplay/googleplay.json
-
-        mkdir -p ./config/ssl/apple
-        echo "${{ secrets.APPLE_SUBSCRIPTION_KEY_P8_BASE_64 }}" | base64 --decode > ./config/ssl/apple/SubscriptionKey_SJ7S7HZ8H5.p8
-        echo "${{ secrets.APPLE_PUSH_DEV_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/apple/apple_push_dev.pem
-        echo "${{ secrets.APPLE_PUSH_PROD_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/apple/apple_push_prod.pem
-
-        mkdir -p ./config/ssl/gointerpay/35c9aa40-6071-458c-bb7e-10ffdd01d574
-        echo "${{ secrets.GOINTERPAY_35C9_COMBINED_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/gointerpay/35c9aa40-6071-458c-bb7e-10ffdd01d574/35c9aa40-6071-458c-bb7e-10ffdd01d574.combined.pem
-        echo "${{ secrets.GOINTERPAY_35C9_KEY_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/gointerpay/35c9aa40-6071-458c-bb7e-10ffdd01d574/35c9aa40-6071-458c-bb7e-10ffdd01d574.key.pem
-
-        mkdir -p ./config/ssl/gointerpay/89904f77-3a29-4b4e-98ae-098512562ae8
-        echo "${{ secrets.GOINTERPAY_8990_COMBINED_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/gointerpay/89904f77-3a29-4b4e-98ae-098512562ae8/89904f77-3a29-4b4e-98ae-098512562ae8.combined.pem
-        echo "${{ secrets.GOINTERPAY_8990_KEY_PEM_BASE_64 }}" | base64 --decode > ./config/ssl/gointerpay/89904f77-3a29-4b4e-98ae-098512562ae8/89904f77-3a29-4b4e-98ae-098512562ae8.key.pem
-
-        mkdir -p ./config/ssl/firebase
-        printf '%s' '{"type":"service_account","project_id":"fir-portable-north-pole-dev","private_key_id":"dummy","private_key":"-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MhgHcTz6sE2I2yPB\naFDrBz8cSHYpThEv2aSQfEFm3KZ1EXAMPLE\n-----END RSA PRIVATE KEY-----\n","client_email":"test@fir-portable-north-pole-dev.iam.gserviceaccount.com","client_id":"000000000000000000000","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token"}' > ./config/ssl/firebase/fir-portable-north-pole-dev.json
-
-        bin/api cache:warmup --no-optional-warmers --no-interaction
-        bin/grpc cache:warmup --no-optional-warmers --no-interaction
-        bin/${{matrix.application}} assets:install ./public --no-interaction
-
         CI=1 php -dpcov.directory=. vendor/bin/paratest --passthru-php="'-dpcov.directory=.'" --exclude-group=noCi --exclude-group=oneSignal-integration --coverage-clover ./tmp/phpunit/report/coverage.xml --display-skipped
         php bin/console draw:tester:coverage-check ./tmp/phpunit/report/coverage.xml 65
       env:
         GITHUB_TOKEN: "${{secrets.GH_PAT}}"
-    - name: Composer (sbin/phpstan)
-      shell: bash
-      run: echo "skipped - sbin/phpstan is a PHPStan-only tooling dir with no composer install to run"
-      env:
-        GITHUB_TOKEN: "${{secrets.GH_PAT}}"
-    - name: PHPUnit (sbin/phpstan)
-      shell: bash
-      run: echo "skipped - sbin/phpstan has no PHPUnit tests"
-      env:
-        GITHUB_TOKEN: "${{secrets.GH_PAT}}"
-  codedeploy:
-    name: Code Deploy
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    - actionlint
-    - hadolint
-    - markdownlint
-    - phpcs
-    - phpstan
-    - semgrep
-    - shellcheck
-    - trivy
-    - yamllint
-    - licenses
-    - php_unit_tests
-    if: "${{always() && (needs.variables.outputs.DEPLOY_ON_BETA == '1' || needs.variables.outputs.DEPLOY_ON_RC == '1' || needs.variables.outputs.DEPLOY_ON_PROD == '1') && needs.variables.result != 'failure' && needs.actionlint.result != 'failure' && needs.hadolint.result != 'failure' && needs.markdownlint.result != 'failure' && needs.phpcs.result != 'failure' && needs.phpstan.result != 'failure' && needs.semgrep.result != 'failure' && needs.shellcheck.result != 'failure' && needs.trivy.result != 'failure' && needs.yamllint.result != 'failure' && needs.licenses.result != 'failure' && needs.php_unit_tests.result != 'failure'}}"
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        application:
-        - api
-        - grpc
-    steps:
-    - name: Setup
-      id: setup
-      uses: cloud-officer/ci-actions/setup@v2
-      with:
-        php-extensions: "${{env.PHP-EXTENSIONS}}"
-        php-ini-values: "${{env.PHP-INI-VALUES}}"
-        php-coverage: "${{env.PHP-COVERAGE}}"
-        php-tools: "${{env.PHP-TOOLS}}"
-        mysql-version: "${{env.MYSQL-VERSION}}"
-        redis-distribution: "${{env.REDIS-DISTRIBUTION}}"
-        redis-port: "${{env.REDIS_PORT}}"
-        redis-version: "${{env.REDIS-VERSION}}"
-        rabbitmq-version: "${{env.RABBITMQ-VERSION}}"
-        rabbitmq-ports: "${{env.RABBITMQ-PORTS}}"
-        apt-packages: "${{env.APT-PACKAGES}}"
-        ssh-key: "${{secrets.SSH_KEY}}"
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
-        github-token: "${{secrets.GH_PAT}}"
-    - name: Composer
-      shell: bash
-      run: composer install --optimize-autoloader --no-interaction --prefer-dist --no-scripts && make update-wordlists
-      env:
-        GITHUB_TOKEN: "${{secrets.GH_PAT}}"
-    - name: Update Packages
-      shell: bash
-      if: "${{needs.variables.outputs.UPDATE_PACKAGES == '1'}}"
-      run: touch update-packages
-    - name: Zip
-      shell: bash
-      if: "${{needs.variables.outputs.DEPLOY_ON_BETA == '1' || needs.variables.outputs.DEPLOY_ON_RC == '1' || needs.variables.outputs.DEPLOY_ON_PROD == '1'}}"
-      run: |
-        echo "${{needs.variables.outputs.BUILD_NAME}}" > ./public/version.txt
-        bin/${{matrix.application}} translation:push loco
-        bin/${{matrix.application}} translation:pull loco --force
-        find vendor -type d -name '.git' -prune -exec rm -rf {} +
-        rm -rf var/cache/* var/log/* vendor/composer/autoload_real.php vendor/autoload.php
-        mv ./app/${{matrix.application}}/bin/scale_php.sh ./bin/
-        mv ./app/${{matrix.application}}/codedeploy ./
-        mv ./app/${{matrix.application}}/appspec.yml ./
-        mv -f ./app/${{matrix.application}}/etc/php ./etc
-        mv -f ./app/${{matrix.application}}/etc/cron.d ./etc
-        if [ -d ./app/${{matrix.application}}/etc/ssl ]; then
-          mv -f ./app/${{matrix.application}}/etc/ssl ./etc
-        fi
-
-        zip --quiet --recurse-paths "${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip" ./* ./.env --exclude ./docs
-        mkdir deployment
-        mv "${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip" "deployment/${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip"
-    - name: S3Copy
-      uses: cloud-officer/ci-actions/codedeploy/s3copy@v2
-      if: "${{needs.variables.outputs.DEPLOY_ON_BETA == '1' || needs.variables.outputs.DEPLOY_ON_RC == '1' || needs.variables.outputs.DEPLOY_ON_PROD == '1'}}"
-      with:
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
-        source: deployment
-        target: s3://${{secrets.CODEDEPLOY_BUCKET}}/${{github.repository}}
-  beta_deploy:
-    name: Beta Deploy
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    - codedeploy
-    if: "${{always() && needs.codedeploy.result == 'success' && needs.variables.outputs.DEPLOY_ON_BETA == '1'}}"
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        application:
-        - api
-        - grpc
-    steps:
-    - name: Beta Deploy
-      uses: cloud-officer/ci-actions/codedeploy/deploy@v2
-      with:
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
-        application-name: "${{matrix.application}}"
-        deployment-group-name: beta
-        s3-bucket: "${{secrets.CODEDEPLOY_BUCKET}}"
-        s3-key: "${{github.repository}}/${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip"
-  rc_deploy:
-    name: Rc Deploy
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    - codedeploy
-    if: "${{always() && needs.codedeploy.result == 'success' && needs.variables.outputs.DEPLOY_ON_RC == '1'}}"
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        application:
-        - api
-        - grpc
-    steps:
-    - name: Rc Deploy
-      uses: cloud-officer/ci-actions/codedeploy/deploy@v2
-      with:
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
-        application-name: "${{matrix.application}}"
-        deployment-group-name: rc
-        s3-bucket: "${{secrets.CODEDEPLOY_BUCKET}}"
-        s3-key: "${{github.repository}}/${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip"
-  prod_deploy:
-    name: Prod Deploy
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    - codedeploy
-    if: "${{always() && needs.codedeploy.result == 'success' && needs.variables.outputs.DEPLOY_ON_PROD == '1'}}"
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        application:
-        - api
-        - grpc
-    steps:
-    - name: Prod Deploy
-      uses: cloud-officer/ci-actions/codedeploy/deploy@v2
-      with:
-        aws-access-key-id: "${{secrets.AWS_ACCESS_KEY_ID}}"
-        aws-secret-access-key: "${{secrets.AWS_SECRET_ACCESS_KEY}}"
-        aws-region: "${{secrets.AWS_DEFAULT_REGION}}"
-        application-name: "${{matrix.application}}"
-        deployment-group-name: prod
-        s3-bucket: "${{secrets.CODEDEPLOY_BUCKET}}"
-        s3-key: "${{github.repository}}/${{matrix.application}}-${{needs.variables.outputs.BUILD_NAME}}.zip"
-  slack:
-    name: Publish Statuses
-    runs-on: ubuntu-latest
-    needs:
-    - variables
-    - actionlint
-    - hadolint
-    - markdownlint
-    - phpcs
-    - phpstan
-    - semgrep
-    - shellcheck
-    - trivy
-    - yamllint
-    - licenses
-    - php_unit_tests
-    - codedeploy
-    - beta_deploy
-    - rc_deploy
-    - prod_deploy
-    if: always()
-    timeout-minutes: 30
-    steps:
-    - name: Publish Statuses
-      uses: cloud-officer/ci-actions/slack@v2
-      with:
-        webhook-url: "${{secrets.SLACK_WEBHOOK_URL}}"
-        jobs: "${{toJSON(needs)}}"
