@@ -54,7 +54,7 @@ class Config implements \Stringable
 
     public function getValue()
     {
-        return $this->data['value'] ?: null;
+        return $this->data['value'] ?? null;
     }
 
     public function setValue(mixed $value): self

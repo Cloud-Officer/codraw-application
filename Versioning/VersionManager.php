@@ -28,6 +28,8 @@ class VersionManager implements VersionVerificationInterface
             try {
                 $this->eventDispatcher->dispatch($event = new FetchRunningVersionEvent());
             } catch (\Throwable $error) {
+                $this->runningVersion = null;
+
                 throw new VersionInformationIsNotAccessibleException(previous: $error);
             }
 

@@ -47,7 +47,7 @@ class PingAction
         return new JsonResponse(
             json_encode(
                 ['context' => $context, 'services' => $data],
-                \JSON_PRETTY_PRINT
+                \JSON_PRETTY_PRINT | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR
             ),
             $httpStatus,
             json: true

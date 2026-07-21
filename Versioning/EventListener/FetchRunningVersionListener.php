@@ -31,7 +31,11 @@ class FetchRunningVersionListener implements EventSubscriberInterface
             return;
         }
 
-        $event->setRunningVersion(trim(file_get_contents($versionFilename)));
+        if (false === $content = file_get_contents($versionFilename)) {
+            return;
+        }
+
+        $event->setRunningVersion(trim($content));
     }
 
     public function fetchFromGit(FetchRunningVersionEvent $event): void
@@ -45,7 +49,7 @@ class FetchRunningVersionListener implements EventSubscriberInterface
         $version = exec(
             \sprintf(
                 '(cd %s && git describe --tags --always --dirty) 2>&1',
-                $this->projectDirectory
+                escapeshellarg($this->projectDirectory)
             ),
             $output,
             $code

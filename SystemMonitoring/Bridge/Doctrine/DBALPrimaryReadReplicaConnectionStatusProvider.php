@@ -56,8 +56,11 @@ class DBALPrimaryReadReplicaConnectionStatusProvider implements ConnectionStatus
             );
         }
 
-        $previousConnectionToPrimary
-            ? $connection->ensureConnectedToPrimary()
-            : $connection->ensureConnectedToReplica();
+        try {
+            $previousConnectionToPrimary
+                ? $connection->ensureConnectedToPrimary()
+                : $connection->ensureConnectedToReplica();
+        } catch (\Throwable) {
+        }
     }
 }
